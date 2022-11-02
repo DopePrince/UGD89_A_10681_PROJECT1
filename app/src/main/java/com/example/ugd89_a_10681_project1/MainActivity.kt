@@ -20,16 +20,25 @@ import android.widget.Toast
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatDelegate
 
-class MainActivity : AppCompatActivity() {
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.os.Build
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.app.NotificationCompat
+
+class MainActivity : AppCompatActivity(), SensorEventListener {
     private var mCamera: Camera? = null
     private var mCameraView: CameraView? = null
 
     lateinit var proximitySensor: Sensor
     lateinit var sensorManager: SensorManager
 
+    private val CHANNEL_ID_1 = "channel_notification_01"
+    private val notificationId1 = 101
+
     var proximitySensorEventListener: SensorEventListener? = object : SensorEventListener {
-        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-            return
+        override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
+            //
         }
 
         override fun onSensorChanged(event: SensorEvent) {
@@ -50,25 +59,6 @@ class MainActivity : AppCompatActivity() {
                     change_camera.addView(mCameraView)
                 }
             }
-
-//            if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
-//                val sides = event.values[0]
-//                val upDown = event.values[1]
-//
-//                square.apply {
-//                    rotationX = upDown * 3f
-//                    rotationY = sides * 3f
-//                    rotation = -sides
-//                    translationX = sides * -10
-//                    translationY = upDown * 10
-//                }
-//
-//                val color = if (upDown.toInt() == 0 && sides.toInt() == 0) Color.GREEN else Color.RED
-//                square.setBackgroundColor(color)
-//
-//                square.text = "up/down ${upDown.toInt()}\nleft/right${sides.toInt()}"
-//
-//            }
         }
     }
 
@@ -108,27 +98,76 @@ class MainActivity : AppCompatActivity() {
         imageClose.setOnClickListener { view: View? -> System.exit(0) }
 
         // ACCELEROMETER CODE
+        setUpSensorStuff()
 
         // NOTIFICATION CODE
-
+        createNotificationChannel()
     }
 
-//    private fun setUpSensorStuff() {
-//        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
-//
-//        sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.also { accelerometer ->
-//            sensorManager.registerListener(
-//                this,
-//                accelerometer,
-//                SensorManager.SENSOR_DELAY_FASTEST,
-//                SensorManager.SENSOR_DELAY_FASTEST
-//            )
-//        }
-//    }
-//
-//    override fun onDestroy() {
-//        sensorManager.unregisterListener(this)
-//        super.onDestroy()
-//    }
+    // ACCELEROMETER CODE
+    private fun setUpSensorStuff() {
+        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+
+        sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.also { accelerometer ->
+            sensorManager.registerListener(
+                this,
+                accelerometer,
+                SensorManager.SENSOR_DELAY_FASTEST,
+                SensorManager.SENSOR_DELAY_FASTEST
+            )
+        }
+    }
+
+    // ACCELEROMETER CODE
+    override fun onSensorChanged(event: SensorEvent?) {
+        if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
+            val sides = event.values[0]
+            val upDown = event.values[1]
+
+            if (upDown.toInt() == 0 && sides.toInt() == 0) Color.GREEN else Color.RED
+
+            if(upDown.toInt() > 5 || sides.toInt() > 5){
+                sendNotification()
+            }
+        }
+    }
+
+    // ACCELEROMETER CODE
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+        return
+    }
+
+    // NOTIFICATION CODE
+    private fun createNotificationChannel() {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            val name = "Notification Title"
+            val descriptionText = "Notification Description"
+
+            val channel1 = NotificationChannel(CHANNEL_ID_1, name, NotificationManager.IMPORTANCE_DEFAULT).apply {
+                description = descriptionText
+            }
+            val notificationManager: NotificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel1)
+        }
+    }
+
+    // NOTIFICATION CODE
+    private fun sendNotification(){
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID_1)
+            .setSmallIcon(R.drawable.ic_launcher_background)
+            .setContentText("Selamat anda sudah berhasil mengerjakan Modul 8 dan 9 ")
+            .setContentTitle("Modul89_A_10681_PROJECT2")
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+
+        with(NotificationManagerCompat.from(this)){
+            notify(notificationId1, builder.build())
+        }
+    }
+
+    // ACCELEROMETER CODE
+    override fun onDestroy() {
+        sensorManager.unregisterListener(this)
+        super.onDestroy()
+    }
 
 }
